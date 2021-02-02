@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"time"
@@ -19,11 +22,21 @@ func main() {
 		reconcileFiles("/etc/origin/master/webconsole-config.yaml", -1)
 	}
 
+	input, err := ioutil.ReadFile("/etc/origin/master/webconsole-config.yaml")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	output := bytes.Replace(input, []byte("resourceVersion: \"12862\""), []byte("\n"), -1)
+	if err = ioutil.WriteFile("/etc/origin/master/webconsole-config.yaml", output, 0666); err != nil {
+		log.Fatal(err)
+	}
+
 	cmd := exec.Command("/usr/bin/oc", "apply", "-f", "/etc/origin/master/webconsole-config.yaml")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
+	apperr := cmd.Run()
+	if apperr != nil {
 		panic(err)
 	}
 
@@ -31,9 +44,8 @@ func main() {
 	for _, s := range services {
 		fmt.Println(s)
 		restartControlPlane(s)
+		time.Sleep(10 * time.Second)
 	}
-
-	time.Sleep(5)
 
 	fmt.Println("Restarting web-console")
 	deletePod("openshift-web-console")

@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
-	"time"
 )
 
 func reconcileFiles(files string, conc int) {
@@ -32,7 +31,6 @@ func restartControlPlane(svc string) {
 	if err != nil {
 		panic(err)
 	}
-	time.Sleep(5)
 }
 
 func check(filecheck string) bool {
